@@ -7,17 +7,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          O="Origin: https://carvalho-joao.github.io"
-          curl -s -D - -o /tmp/p.json -H "$O" "https://api.fxtwitter.com/2/status/700002208306171904" | grep -iE "^HTTP|access-control"
-          python3 - <<'PY'
+          for p in 2/status/20 i/status/20 jack/status/20 2/status/1548119328498728960; do
+            printf "%s -> " "$p"; curl -s -o /tmp/r.json -w "%{http_code} " "https://api.fxtwitter.com/$p"; head -c 160 /tmp/r.json; echo
+          done
+          echo "--- busca por GIF recente"
+          curl -s "https://api.fxtwitter.com/2/profile/Twitter/statuses?count=40" -o /tmp/tl.json -w "%{http_code}\n"; head -c 200 /tmp/tl.json; echo
+          curl -s "https://api.fxtwitter.com/2/profile/giphy/statuses" -o /tmp/g.json -w "%{http_code}\n"
+          python3 - <<'PY' || true
           import json
-          d=json.load(open('/tmp/p.json')); s=d.get('status') or {}
-          print('TEXT', (s.get('text') or '')[:80])
-          m=s.get('media') or {}
-          print('KEYS', list(m.keys()))
-          for v in m.get('videos',[]): print('VIDEO', v.get('type'), v.get('width'), v.get('height'), v.get('duration'), v.get('url')); print('FORMATS', [(f.get('container'),f.get('codec'),f.get('bitrate')) for f in v.get('formats',[])])
-          for p in m.get('photos',[]): print('PHOTO', p.get('type'), p.get('url'))
-          open('/tmp/u','w').write((m.get('videos') or [{}])[0].get('url',''))
+          for f in ['/tmp/tl.json','/tmp/g.json']:
+              try: d=json.load(open(f))
+              except Exception as e: print(f,'ERR',e); continue
+              print(f, list(d.keys())[:8])
+              res=d.get('results') or d.get('statuses') or []
+              n=0
+              for s in res:
+                  for v in ((s.get('media') or {}).get('videos') or []):
+                      print('FOUND', v.get('type'), s.get('id'), v.get('url')); n+=1
+                  if n>4: break
           PY
-          U=$(cat /tmp/u); echo "URL $U"
-          [ -n "$U" ] && curl -s -D - -o /tmp/v.mp4 -H "$O" "$U" | grep -iE "^HTTP|access-control|content-type|content-length" && ls -la /tmp/v.mp4
