@@ -13,4 +13,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
-      - run: python tests/site_test.py
+      - run: python tests/debug_fetch.py; python tests/site_test.py
