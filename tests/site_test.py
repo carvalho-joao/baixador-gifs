@@ -13,7 +13,7 @@ async def main():
     serve()
     ok_mp4 = ok_gif = 0
     async with async_playwright() as p:
-        b = await p.chromium.launch()
+        b = await p.chromium.launch(channel="chrome")
         for pid in IDS:
             pg = await b.new_page(accept_downloads=True)
             errs = []
@@ -42,7 +42,7 @@ async def main():
                 await pg.wait_for_selector(".card [data-save]", timeout=120000)
                 print(pid, "GIF OK", await pg.inner_text(".card [data-save]")); ok_gif += 1
             except Exception as e:
-                print(pid, "GIF FALHOU", str(e)[:120], await pg.inner_text(".card .out"))
+                print(pid, "GIF FALHOU", str(e)[:120], "|", (await pg.inner_text(".card")).replace("\n"," / ")[-300:])
             if errs: print(pid, "ERROS JS", errs)
             await pg.close()
         await b.close()

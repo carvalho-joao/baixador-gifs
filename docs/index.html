@@ -263,7 +263,12 @@ async function makeGif(it, width, fps, onP){
   const src = URL.createObjectURL(await getBlob(it));
   const v = document.createElement('video');
   v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = src;
-  await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('vídeo ilegível')); });
+  await new Promise((res, rej) => {
+    const to = setTimeout(() => rej(new Error('o navegador não conseguiu abrir o vídeo')), 20000);
+    v.onloadeddata = () => { clearTimeout(to); res(); };
+    v.onerror = () => { clearTimeout(to); rej(new Error('vídeo ilegível')); };
+    v.load();
+  });
   const dur = Math.min(isFinite(v.duration) ? v.duration : (it.dur || 5), MAX_GIF_SECONDS);
   const vw = v.videoWidth, vh = v.videoHeight;
   const w = width && width < vw ? width : vw;
