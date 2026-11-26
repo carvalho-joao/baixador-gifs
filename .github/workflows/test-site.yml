@@ -1,0 +1,16 @@
+name: Testar site
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', 'tests/**', '.github/workflows/test-site.yml']
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
+      - run: python tests/site_test.py
