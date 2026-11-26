@@ -1,0 +1,62 @@
+name: Compilar APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Chave de assinatura (opcional)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > app/release.jks
+            echo "Usando a chave de assinatura dos secrets."
+          else
+            echo "Sem KEYSTORE_BASE64: o APK sai assinado com a chave de debug."
+          fi
+
+      - name: Compilar
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Renomear APK
+        run: cp app/build/outputs/apk/release/app-release.apk BaixadorGifs.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BaixadorGifs-apk
+          path: BaixadorGifs.apk
+
+      - name: Publicar na página de downloads (Releases)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Baixador de GIFs 1.0.${{ github.run_number }}
+          body: |
+            Baixe o **BaixadorGifs.apk** abaixo e abra no celular Android.
+            Se aparecer um aviso, permita "instalar apps desconhecidos" para o navegador ou o app de arquivos.
+          files: BaixadorGifs.apk
+          make_latest: true
