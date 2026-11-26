@@ -7,6 +7,11 @@ App Android para salvar GIFs e vídeos de posts do Twitter / X direto na galeria
 - **Converter para .gif**: gera um .gif de verdade no próprio celular.
 - Os arquivos vão para *Filmes/GIFs Twitter* e *Imagens/GIFs Twitter*.
 
+## Site (computador)
+
+**https://carvalho-joao.github.io/baixador-gifs/**: cole o link, baixe o MP4 ou converta para .gif no navegador.
+O código fica em `docs/` e é publicado pelo workflow `site.yml`; o `test-site.yml` testa o site com posts reais.
+
 ## Baixar o APK
 
 Vá em **Releases** (coluna da direita do repositório) e baixe o `BaixadorGifs.apk` da versão mais recente.
