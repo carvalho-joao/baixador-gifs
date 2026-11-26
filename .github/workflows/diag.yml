@@ -8,16 +8,16 @@ jobs:
     steps:
       - run: |
           O="Origin: https://carvalho-joao.github.io"
-          for id in 1548119328498728960 1548117889437208581; do
-            echo "=== API $id"
-            curl -s -D - -o /tmp/p.json -H "$O" "https://api.fxtwitter.com/2/status/$id" | grep -iE "^HTTP|access-control|content-type"
-            python3 -c "import json;d=json.load(open('/tmp/p.json'));m=(d.get('status') or {}).get('media') or {};[print('MEDIA',v.get('type'),v.get('url')) for v in m.get('videos',[])]" || true
-          done
-          U=$(python3 -c "import json;d=json.load(open('/tmp/p.json'));print(((d.get('status') or {}).get('media') or {}).get('videos',[{}])[0].get('url',''))")
-          for id in 1548119328498728960; do python3 -c "import json;d=json.load(open('/tmp/p.json'))" ; done
-          echo "=== VIDEO $U"
-          [ -n "$U" ] && curl -s -D - -o /dev/null -H "$O" "$U" | grep -iE "^HTTP|access-control|content-type|content-length"
-          echo "=== VIDEO tweet_video sample"
-          curl -s -D - -o /dev/null -H "$O" "https://video.twimg.com/tweet_video/test.mp4" | grep -iE "^HTTP|access-control"
-          echo "=== d.fxtwitter"
-          curl -s -D - -o /dev/null -A "Mozilla/5.0" "https://d.fxtwitter.com/i/status/1548119328498728960" | grep -iE "^HTTP|^location"
+          curl -s -D - -o /tmp/p.json -H "$O" "https://api.fxtwitter.com/2/status/700002208306171904" | grep -iE "^HTTP|access-control"
+          python3 - <<'PY'
+          import json
+          d=json.load(open('/tmp/p.json')); s=d.get('status') or {}
+          print('TEXT', (s.get('text') or '')[:80])
+          m=s.get('media') or {}
+          print('KEYS', list(m.keys()))
+          for v in m.get('videos',[]): print('VIDEO', v.get('type'), v.get('width'), v.get('height'), v.get('duration'), v.get('url')); print('FORMATS', [(f.get('container'),f.get('codec'),f.get('bitrate')) for f in v.get('formats',[])])
+          for p in m.get('photos',[]): print('PHOTO', p.get('type'), p.get('url'))
+          open('/tmp/u','w').write((m.get('videos') or [{}])[0].get('url',''))
+          PY
+          U=$(cat /tmp/u); echo "URL $U"
+          [ -n "$U" ] && curl -s -D - -o /tmp/v.mp4 -H "$O" "$U" | grep -iE "^HTTP|access-control|content-type|content-length" && ls -la /tmp/v.mp4

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baixador de GIFs</title>
+<meta name="description" content="Cole o link de um post do Twitter / X e baixe o GIF como MP4 ou .gif.">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: rápido, brincalhão, direto — uma ferramenta que já abre pronta para uso
+   IDEA: uma tira de filme em loop; cada GIF é um quadro com furinhos de película
+   PICTURE: a própria caixa de colar link, emoldurada como um quadro de filme
+   COLOUR and TYPE: fundo branco / noite grafite, tinta quase preta, coral como destaque, verde-água de apoio; Archivo 800 + Inter
+   LAYOUT: coluna central de até 880px; título, caixa, resultados em cartões; empilha no celular */
+:root{color-scheme:light dark;--bg:#ffffff;--ink:#15171b;--mute:#5d6169;--panel:#f3f4f6;--line:#dfe2e6;--sup:#0e7479;--film:#15171b;--acc:#ff4f3a;--acc-ink:#ffffff}
+@media(prefers-color-scheme:dark){:root{--bg:#121417;--ink:#f1efe9;--mute:#a3a7ad;--panel:#1c1f24;--line:#2c3037;--sup:#46c1c6;--film:#05070a}}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:880px;margin:0 auto;padding:clamp(28px,5vw,64px) max(5vw,16px) 48px}
+h1{font:800 clamp(34px,6vw,52px)/1.05 Archivo,Inter,sans-serif;margin:0 0 10px;text-wrap:balance;letter-spacing:-.02em}
+.lede{color:var(--mute);margin:0 0 28px;max-width:60ch}
+.film{background:var(--film);border-radius:18px;padding:30px 18px;position:relative;box-shadow:0 18px 40px -22px rgba(0,0,0,.55)}
+.film::before,.film::after{content:"";position:absolute;left:18px;right:18px;height:10px;
+background:repeating-linear-gradient(90deg,rgba(255,255,255,.85) 0 14px,transparent 14px 30px);border-radius:3px;opacity:.9}
+.film::before{top:10px}.film::after{bottom:10px}
+.frame{background:var(--bg);border-radius:10px;padding:clamp(16px,3vw,26px)}
+label.big{display:block;font-weight:600;margin-bottom:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input[type=text]{flex:1 1 280px;font:16px Inter,sans-serif;padding:0 16px;height:52px;border-radius:10px;border:2px solid var(--line);background:var(--panel);color:var(--ink)}
+input[type=text]:focus{outline:none;border-color:var(--acc)}
+button,.btn{font:600 16px Inter,sans-serif;height:48px;padding:0 18px;border-radius:10px;border:2px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:8px;text-decoration:none;white-space:nowrap}
+button.main,.btn.main{background:var(--acc);border-color:var(--acc);color:var(--acc-ink)}
+.row>button{height:52px}
+button:focus-visible,.btn:focus-visible,select:focus-visible{outline:3px solid var(--sup);outline-offset:2px}
+button:disabled{opacity:.55;cursor:progress}
+.hint{font-size:14px;color:var(--mute);margin:10px 0 0}
+.recent{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.recent button{height:36px;font-size:14px;font-weight:500;padding:0 12px;border-radius:999px}
+.msg{margin:22px 0 0;padding:14px 16px;border-radius:10px;background:var(--panel);border-left:4px solid var(--acc)}
+.msg.ok{border-left-color:var(--sup)}
+.msg a{color:var(--sup);font-weight:600}
+.post{margin:28px 0 12px;display:flex;gap:12px;align-items:center}
+.post img{width:44px;height:44px;border-radius:50%;flex:none;background:var(--panel)}
+.post b{display:block}.post span{color:var(--mute);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.cards{display:grid;gap:18px}
+.card{border:2px solid var(--line);border-radius:14px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.media{background:var(--film);display:grid;place-items:center;min-height:220px;position:relative}
+.media video,.media img{width:100%;height:100%;max-height:420px;object-fit:contain;display:block}
+.tag{position:absolute;top:10px;left:10px;background:var(--acc);color:#fff;font:600 13px Inter,sans-serif;padding:3px 9px;border-radius:6px}
+.side{padding:18px;display:flex;flex-direction:column;gap:14px}
+.meta{font-size:14px;color:var(--mute)}
+.opts{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.opts label{font-size:14px;font-weight:600;display:grid;gap:4px}
+select{font:16px Inter,sans-serif;height:44px;border-radius:8px;border:2px solid var(--line);background:var(--panel);color:var(--ink);padding:0 8px}
+.bar{height:10px;border-radius:99px;background:var(--panel);overflow:hidden;display:none}
+.bar i{display:block;height:100%;width:0;background:var(--sup);transition:width .15s}
+.side .btn,.side button{width:100%;justify-content:center}
+.out img{max-width:100%;border-radius:8px;display:block;margin-bottom:10px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:40px}
+.steps div{background:var(--panel);border-radius:12px;padding:16px}
+.steps b{display:block;font:800 20px Archivo,sans-serif;margin-bottom:4px}
+.steps p{margin:0;font-size:15px;color:var(--mute)}
+.app{margin-top:34px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;background:var(--film);color:#fff;border-radius:16px;padding:20px 22px}
+.app img{width:64px;height:64px;border-radius:14px;flex:none}
+.app div{flex:1 1 260px}.app b{font:800 22px/1.2 Archivo,Inter,sans-serif;display:block}.app p{margin:4px 0 0;color:#c9ccd1;font-size:15px}
+.app .btn{flex:none}
+footer a{color:var(--sup)}
+footer{margin-top:28px;font-size:13px;color:var(--mute)}
+.spin{width:16px;height:16px;border:3px solid currentColor;border-right-color:transparent;border-radius:50%;animation:r .7s linear infinite}
+@keyframes r{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}.bar i{transition:none}}
+@media(max-width:640px){.card{grid-template-columns:minmax(0,1fr)}.steps{grid-template-columns:minmax(0,1fr)}.row>button{flex:1 1 auto;justify-content:center}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>Baixe GIFs do Twitter / X</h1>
+  <p class="lede">Cole o link do post. Você baixa o GIF como MP4 (leve, igual ao original) ou converte para um arquivo .gif de verdade, aqui mesmo no navegador.</p>
+
+  <div class="film">
+    <form class="frame" id="f">
+      <label class="big" for="url">Link do post</label>
+      <div class="row">
+        <input type="text" id="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://x.com/usuario/status/1234567890">
+        <button type="button" id="paste">Colar</button>
+        <button type="submit" class="main" id="go">Buscar</button>
+      </div>
+      <p class="hint">Funciona com links de x.com, twitter.com, fxtwitter, vxtwitter ou só o número do post.</p>
+      <div class="recent" id="recent"></div>
+    </form>
+  </div>
+
+  <div id="msg"></div>
+  <div id="post"></div>
+  <div class="cards" id="cards"></div>
+
+  <section class="steps" id="steps">
+    <div><b>1. Copie</b><p>No app ou site, toque em compartilhar e em "Copiar link".</p></div>
+    <div><b>2. Cole</b><p>Cole aqui. A busca começa sozinha quando o link é reconhecido.</p></div>
+    <div><b>3. Baixe</b><p>MP4 para WhatsApp e redes; .gif para onde só aceita GIF.</p></div>
+  </section>
+
+  <section class="app">
+    <img src="icon.png" alt="">
+    <div><b>Tem Android? Use o app</b><p>Salva direto na galeria e aparece no menu Compartilhar do app do X.</p></div>
+    <a class="btn main" href="https://github.com/carvalho-joao/baixador-gifs/releases/latest/download/BaixadorGifs.apk">Baixar APK</a>
+  </section>
+
+  <footer>Os dados do post vêm da API pública do FxTwitter (api.fxtwitter.com); o vídeo vem direto do servidor do Twitter. Tudo acontece no seu navegador. Só funciona com posts públicos. Respeite os direitos de quem criou o conteúdo. <a href="https://github.com/carvalho-joao/baixador-gifs">Código no GitHub</a>.</footer>
+</main>
+
+<script src="gifenc.js"></script>
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const MAX_GIF_SECONDS = 30;
+const blobs = new Map();
+let items = [], cur = null, busyId = null;
+
+function parseId(s){
+  s = (s || '').trim();
+  const m = s.match(/status(?:es)?\/(\d{2,20})/) || s.match(/^(\d{2,20})$/);
+  return m ? m[1] : null;
+}
+function msg(html, ok){ $('#msg').innerHTML = html ? `<div class="msg${ok?' ok':''}">${html}</div>` : ''; }
+function mb(n){ return n < 1048576 ? (n/1024).toFixed(0)+' KB' : (n/1048576).toFixed(1)+' MB'; }
+
+async function getPost(id){
+  const urls = [`https://api.fxtwitter.com/2/status/${id}`, `https://api.fxtwitter.com/i/status/${id}`];
+  let err;
+  for (const u of urls){
+    try{
+      const r = await fetch(u);
+      const j = await r.json().catch(() => ({}));
+      const p = j.status || j.tweet;
+      if (p && (p.media || p.text !== undefined || p.author)) return p;
+      err = new Error(j.message || ('HTTP ' + r.status));
+    }catch(e){ err = e; }
+  }
+  throw err || new Error('erro');
+}
+
+function bestUrl(v){
+  const f = (v.formats || []).filter(x => x.container === 'mp4' && x.url && x.codec !== 'hevc');
+  if (f.length){ f.sort((a,b) => (b.bitrate||0) - (a.bitrate||0)); return f[0].url; }
+  if (v.variants){
+    const vs = v.variants.filter(x => (x.content_type||'').includes('mp4')).sort((a,b)=>(b.bitrate||0)-(a.bitrate||0));
+    if (vs.length) return vs[0].url;
+  }
+  return v.url;
+}
+
+function collect(p){
+  const out = [];
+  const add = (post, quoted) => {
+    const m = (post && post.media) || {};
+    const vids = (m.videos || []).concat((m.photos || []).filter(x => x.type === 'gif'));
+    if (!vids.length && m.all) vids.push(...m.all.filter(x => x.type === 'gif' || x.type === 'video'));
+    for (const v of vids) out.push({
+      url: bestUrl(v), thumb: v.thumbnail_url || '', type: v.type === 'gif' ? 'gif' : 'video',
+      w: v.width, h: v.height, dur: v.duration, quoted,
+      author: (post.author && post.author.screen_name) || 'twitter', pid: post.id
+    });
+  };
+  add(p, false);
+  if (p.quote && p.quote.media) add(p.quote, true);
+  return out;
+}
+
+function remember(id, p){
+  try{
+    let r = JSON.parse(localStorage.getItem('gifRecentes') || '[]').filter(x => x.id !== id);
+    r.unshift({ id, who: (p.author && p.author.screen_name) || '' });
+    localStorage.setItem('gifRecentes', JSON.stringify(r.slice(0, 6)));
+  }catch(e){}
+  drawRecent();
+}
+function drawRecent(){
+  let r = [];
+  try{ r = JSON.parse(localStorage.getItem('gifRecentes') || '[]'); }catch(e){}
+  $('#recent').innerHTML = r.length ? r.map(x => `<button type="button" data-id="${esc(x.id)}">${x.who ? '@'+esc(x.who) : esc(x.id)}</button>`).join('') : '';
+}
+
+async function search(raw){
+  const id = parseId(raw);
+  if (!id){ msg('Não reconheci esse link. Ele precisa ter <b>/status/</b> seguido de números.'); return; }
+  if (busyId === id) return;
+  busyId = id;
+  const go = $('#go'); go.disabled = true; go.innerHTML = '<span class="spin"></span> Buscando';
+  msg(''); $('#post').innerHTML = ''; $('#cards').innerHTML = '';
+  try{
+    const p = await getPost(id);
+    items = collect(p); cur = p;
+    const a = p.author || {};
+    $('#post').innerHTML = `<div class="post">${a.avatar_url ? `<img alt="" src="${esc(a.avatar_url)}">` : ''}<div><b>${esc(a.name || '')} <small style="font-weight:400;color:var(--mute)">@${esc(a.screen_name || '')}</small></b><span>${esc(p.text || '')}</span></div></div>`;
+    if (!items.length){ msg('Esse post não tem GIF nem vídeo. Se for uma imagem, abra o post e salve a foto direto.'); }
+    else { renderCards(); remember(id, p); $('#steps').style.display = 'none'; }
+  }catch(e){
+    msg(`Não consegui buscar esse post. Ele pode ser privado, ter sido apagado, ou a API pode estar fora do ar.<br>Tente o link direto: <a href="https://d.fxtwitter.com/i/status/${id}.mp4" target="_blank" rel="noopener">abrir o vídeo do post ${id}</a> (depois, clique com o botão direito e "Salvar vídeo como").`);
+  }finally{
+    busyId = null; go.disabled = false; go.textContent = 'Buscar';
+  }
+}
+
+function renderCards(){
+  $('#cards').innerHTML = items.map((it, i) => {
+    const big = Math.max(it.w || 0, 1);
+    const sizes = [240, 320, 480, 640].filter(s => s < big);
+    const def = sizes.includes(320) ? 320 : 0;
+    const opts = sizes.map(s => `<option value="${s}"${s===def?' selected':''}>${s}px</option>`).join('') + `<option value="0"${def?'':' selected'}>Original (${it.w||'?'}px)</option>`;
+    return `<article class="card" data-i="${i}">
+      <div class="media"><span class="tag">${it.type === 'gif' ? 'GIF' : 'Vídeo'}${it.quoted ? ' · citado' : ''}</span>
+        <video src="${esc(it.url)}" poster="${esc(it.thumb)}" autoplay loop muted playsinline controls></video></div>
+      <div class="side">
+        <div class="meta">${it.w||'?'}×${it.h||'?'} px${it.dur ? ' · ' + Number(it.dur).toFixed(1) + ' s' : ''}</div>
+        <button class="main" data-act="mp4">Baixar MP4</button>
+        <div class="opts">
+          <label>Largura<select data-k="w">${opts}</select></label>
+          <label>Quadros/s<select data-k="fps"><option>10</option><option selected>15</option><option>20</option></select></label>
+        </div>
+        <button data-act="gif">Converter para .gif</button>
+        <div class="bar"><i></i></div>
+        <div class="out"></div>
+      </div></article>`;
+  }).join('');
+}
+
+async function getBlob(it){
+  if (blobs.has(it.url)) return blobs.get(it.url);
+  const r = await fetch(it.url);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const b = await r.blob();
+  blobs.set(it.url, b);
+  return b;
+}
+function save(blob, name){
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = u; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(u), 60000);
+}
+const fname = (it, ext) => `twitter-${it.author}-${it.pid}-${items.indexOf(it)+1}.${ext}`;
+function fallback(card, it){
+  card.querySelector('.out').innerHTML = `<div class="msg">O navegador bloqueou o download direto. <a href="${esc(it.url)}" target="_blank" rel="noopener">Abra o vídeo</a> e use o botão direito → "Salvar vídeo como". A conversão para .gif precisa do download direto, então não vai funcionar neste caso.</div>`;
+}
+
+function seek(v, t){
+  return new Promise(res => {
+    const done = () => { v.removeEventListener('seeked', done); clearTimeout(to); res(); };
+    const to = setTimeout(done, 2000);
+    v.addEventListener('seeked', done);
+    v.currentTime = t;
+  });
+}
+
+async function makeGif(it, width, fps, onP){
+  const { GIFEncoder, quantize, applyPalette } = window.GIFENC;
+  const src = URL.createObjectURL(await getBlob(it));
+  const v = document.createElement('video');
+  v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = src;
+  await new Promise((res, rej) => { v.onloadeddata = res; v.onerror = () => rej(new Error('vídeo ilegível')); });
+  const dur = Math.min(isFinite(v.duration) ? v.duration : (it.dur || 5), MAX_GIF_SECONDS);
+  const vw = v.videoWidth, vh = v.videoHeight;
+  const w = width && width < vw ? width : vw;
+  const h = Math.max(2, Math.round(vh * w / vw));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  const gif = GIFEncoder();
+  const n = Math.max(1, Math.floor(dur * fps)), delay = Math.round(1000 / fps);
+  for (let i = 0; i < n; i++){
+    await seek(v, Math.min(i / fps, Math.max(0, v.duration - 0.01)));
+    ctx.drawImage(v, 0, 0, w, h);
+    const d = ctx.getImageData(0, 0, w, h).data;
+    const pal = quantize(d, 256);
+    gif.writeFrame(applyPalette(d, pal), w, h, { palette: pal, delay });
+    onP((i + 1) / n);
+    if (i % 2) await new Promise(r => setTimeout(r));
+  }
+  gif.finish();
+  URL.revokeObjectURL(src);
+  return new Blob([gif.bytes()], { type: 'image/gif' });
+}
+
+$('#cards').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-act]'); if (!b) return;
+  const card = b.closest('.card'), it = items[+card.dataset.i];
+  const label = b.textContent;
+  b.disabled = true;
+  if (b.dataset.act === 'mp4'){
+    b.innerHTML = '<span class="spin"></span> Baixando';
+    try{ save(await getBlob(it), fname(it, 'mp4')); }
+    catch(err){ fallback(card, it); }
+    b.disabled = false; b.textContent = label;
+    return;
+  }
+  const bar = card.querySelector('.bar'), fill = bar.firstElementChild, out = card.querySelector('.out');
+  const w = +card.querySelector('[data-k=w]').value, fps = +card.querySelector('[data-k=fps]').value;
+  b.innerHTML = '<span class="spin"></span> Convertendo'; bar.style.display = 'block'; fill.style.width = '0'; out.innerHTML = '';
+  try{
+    const gif = await makeGif(it, w, fps, p => fill.style.width = (p * 100).toFixed(0) + '%');
+    const u = URL.createObjectURL(gif);
+    out.innerHTML = `<img alt="Prévia do GIF" src="${u}"><button class="main" type="button" data-save>Baixar .gif (${mb(gif.size)})</button>`;
+    out.querySelector('[data-save]').onclick = () => save(gif, fname(it, 'gif'));
+    if ((it.dur || 0) > MAX_GIF_SECONDS) out.insertAdjacentHTML('beforeend', `<p class="hint">Usei só os primeiros ${MAX_GIF_SECONDS} segundos.</p>`);
+  }catch(err){
+    if (err && (err.name === 'SecurityError' || err.name === 'TypeError')) fallback(card, it);
+    else out.innerHTML = `<div class="msg">A conversão falhou (${esc(err && err.message)}). Tente uma largura menor.</div>`;
+  }
+  bar.style.display = 'none'; b.disabled = false; b.textContent = label;
+});
+
+$('#f').addEventListener('submit', e => { e.preventDefault(); search($('#url').value); });
+$('#url').addEventListener('input', e => { if (parseId(e.target.value)) search(e.target.value); });
+$('#paste').addEventListener('click', async () => {
+  try{ const t = await navigator.clipboard.readText(); $('#url').value = t; search(t); }
+  catch(e){ $('#url').focus(); msg('Seu navegador não deixou ler a área de transferência. Cole com Ctrl+V (ou segure e toque em Colar no celular).'); }
+});
+$('#recent').addEventListener('click', e => {
+  const b = e.target.closest('button[data-id]'); if (!b) return;
+  $('#url').value = 'https://x.com/i/status/' + b.dataset.id; search(b.dataset.id);
+});
+drawRecent();
+const q = new URLSearchParams(location.search).get('url');
+if (q){ $('#url').value = q; search(q); }
+}
+</script>
+</body>
+</html>

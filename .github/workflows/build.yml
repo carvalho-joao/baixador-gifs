@@ -3,6 +3,7 @@ name: Compilar APK
 on:
   push:
     branches: [main]
+    paths: ['app/**', '*.gradle', 'gradle.properties', '.github/workflows/build.yml']
   workflow_dispatch:
 
 permissions:
