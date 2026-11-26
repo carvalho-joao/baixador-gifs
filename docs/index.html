@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Baixador de GIFs</title>
 <meta name="description" content="Cole o link de um post do Twitter / X e baixe o GIF como MP4 ou .gif.">
@@ -134,7 +135,7 @@ async function getPost(id){
   let err;
   for (const u of urls){
     try{
-      const r = await fetch(u);
+      const r = await fetch(u, { referrerPolicy: 'no-referrer' });
       const j = await r.json().catch(() => ({}));
       const p = j.status || j.tweet;
       if (p && (p.media || p.text !== undefined || p.author)) return p;
@@ -231,7 +232,7 @@ function renderCards(){
 
 async function getBlob(it){
   if (blobs.has(it.url)) return blobs.get(it.url);
-  const r = await fetch(it.url);
+  const r = await fetch(it.url, { referrerPolicy: 'no-referrer', cache: 'no-store', credentials: 'omit' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const b = await r.blob();
   blobs.set(it.url, b);
