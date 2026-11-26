@@ -19,8 +19,8 @@ android {
     }
 
     signingConfigs {
-        release {
-            if (releaseKs.exists()) {
+        if (releaseKs.exists()) {
+            release {
                 storeFile releaseKs
                 storePassword System.getenv('KEYSTORE_PASSWORD')
                 keyAlias 'baixador'

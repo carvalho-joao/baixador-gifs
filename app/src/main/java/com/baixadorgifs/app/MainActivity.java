@@ -148,6 +148,7 @@ public class MainActivity extends Activity {
     }
 
     private static WebResourceResponse text(int code, String reason, String mime, String body) {
+        if (code < 200 || code > 599 || (code >= 300 && code < 400)) code = 502;
         Map<String, String> h = new HashMap<>();
         h.put("Cache-Control", "no-store");
         return new WebResourceResponse(mime, "utf-8", code, reason, h,
